@@ -1,3 +1,4 @@
+import { loadResources } from "/js/animations.js";
 function main(){
     const app = new PIXI.Application({resizeTo: window, resizeThrottle: 250 });
     document.body.appendChild(app.view);
