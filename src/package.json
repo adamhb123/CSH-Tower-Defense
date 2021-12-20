@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "express": "^4.17.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "cshtd",
+  "version": "1.0.0",
+  "main": "server.js",
+  "author": "Adam Brewer",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "eslint": "^8.5.0"
+  }
+}
