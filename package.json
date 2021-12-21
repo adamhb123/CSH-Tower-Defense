@@ -1,0 +1,23 @@
+{
+  "name": "CSH-Tower-Defense-1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adamhb123/CSH-Tower-Defense.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adamhb123/CSH-Tower-Defense/issues"
+  },
+  "homepage": "https://github.com/adamhb123/CSH-Tower-Defense#readme",
+  "dependencies": {
+    "express": "^4.17.2"
+  }
+}
