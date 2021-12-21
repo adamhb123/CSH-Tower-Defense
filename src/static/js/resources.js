@@ -43,7 +43,9 @@ function onLoadingComplete(e){
     app.stage.removeChild(LOADING_TEXT);
     // !! Convert LOADED_TEXTURES to SPRITES here !!
     LOADED_SPRITES.CSHLogoAnimation = new PIXI.AnimatedSprite(LOADED_TEXTURES.CSHLogoAnimation);
+    LOADED_SPRITES.EHouseLogoAnimation = new PIXI.AnimatedSprite(LOADED_TEXTURES.EHouseLogoAnimation);
     LOADED_SPRITES.GenericEnemy01 = new PIXI.AnimatedSprite(LOADED_TEXTURES.GenericEnemy01);
+    
     return "Finished loading all resources!";
 }
 function loadResources(resource_obj){
@@ -55,10 +57,12 @@ function loadResources(resource_obj){
         const loader = PIXI.Loader.shared;
         loader
         .add("CSHLogoAnimationSpritesheet", "assets/misc/CSHLogoANIMATION01.png")
+        .add("EHouseLogoAnimationSpritesheet", "assets/misc/EHouseLogoANIMATION01.png")
         .add("GenericEnemy01Spritesheet", "assets/entities/enemies/GenericEnemy01.png")
         .load((loader, resources) => {
           // !! Load TEXTURES here !!
           LOADED_TEXTURES.CSHLogoAnimation = textureListFromFullSheet(new PIXI.Sprite(resources.CSHLogoAnimationSpritesheet.texture), 1, 21);
+          LOADED_TEXTURES.EHouseLogoAnimation = textureListFromFullSheet(new PIXI.Sprite(resources.EHouseLogoAnimationSpritesheet.texture), 1, 4);
           LOADED_TEXTURES.GenericEnemy01 = textureListFromFullSheet(new PIXI.Sprite(resources.GenericEnemy01Spritesheet.texture), 1, 1);
         });
         

@@ -22,7 +22,7 @@ class Entity {
         this.animations[key].y = this.y;
       });
       Object.keys(this.update_callbacks).forEach(funcname => {
-        this.update_callbacks[funcname](delta);
+        this.update_callbacks[funcname](this, delta);
       });
     }
     addUpdateCallback(name, func){
@@ -39,8 +39,6 @@ class Entity {
     playAnimation(stage, name, loop=true, delete_on_complete=true){
       // May need to rethink some choices here
       // Update position prior to playing
-      
-
       this.animations[name].loop = loop;
       this.animations[name].onComplete = () => {
         // Remove this animation, then return to default, unless it is already default OR delete_on_complete is false
