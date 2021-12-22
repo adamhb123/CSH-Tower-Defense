@@ -1,3 +1,4 @@
+import * as Camera from "/js/camera.js";
 import { Callback } from "/js/utility.js";
 class Key {
   // This class represents either a keyboard key or a mouse button
