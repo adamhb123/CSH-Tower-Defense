@@ -1,25 +1,43 @@
-// Contains all active entities
+  // Contains all active entities
 const ACTIVE_ENTITIES = [];
 
 function getActiveEntities(){
   return ACTIVE_ENTITIES;
 }
+function getActiveEntity(name){
+  let requestedEntity = null;
+  ACTIVE_ENTITIES.forEach(entity => {
+    console.log(entity.name);
+    if(entity.name == name) {
+      requestedEntity = entity;
+      return;
+    }
+  });
+  return requestedEntity;
+}
 
 class Entity {
-    constructor(x, y, animations){
+    constructor(name, parent, x, y, animations){
+      this.name = name;
+      this.parent = parent;
       this.x = x;
       this.y = y;
       // ALL animations should have a "Default" entry to return to upon
       // Completion of other animations
-      this.animations = animations;
-      this.update_callbacks = [];
+      this.container = new PIXI.Container();
+      (this.parent instanceof Entity ? this.parent.container : this.parent).addChild(this.container);
+      // Add list of NamedSpriteAnimations to container
+      animations.forEach(animation => {
+        this.container.addChild(animation);
+      });
+      this.update_callbacks = {};
       ACTIVE_ENTITIES.push(this);
     }
     update(delta){
       // To be executed in the primary game loop
-      Object.keys(this.animations).forEach(key => {
-        this.animations[key].x = this.x;
-        this.animations[key].y = this.y;
+      this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.x = this.x;
+        named_sprite_animation.y = this.y;
       });
       Object.keys(this.update_callbacks).forEach(funcname => {
         this.update_callbacks[funcname](this, delta);
@@ -33,27 +51,48 @@ class Entity {
       // Removes a function from the update_callbacks list
       delete this.update_callbacks[name];
     }
-    setAnimationSpeed(name, speed){
-      this.animations[name].animationSpeed = speed;
+    getChildNamedSpriteAnimation(name){
+      let retrieved_animation = undefined;
+      this.container.children.forEach(named_sprite_animation => {
+        if(name == named_sprite_animation.name){
+          retrieved_animation = named_sprite_animation;
+          return;
+        }
+      });
+      return retrieved_animation;
     }
-    playAnimation(stage, name, loop=true, delete_on_complete=true){
+    setAnchor(a, b){
+      // Set all sprites' anchors to (a, b)
+      this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.anchor.set(a, b);
+      });
+    }
+    setAnimationSpeed(name, speed){
+      this.getChildNamedSpriteAnimation(name).animationSpeed = speed;
+    }
+    playAnimation(name, loop=true, delete_on_complete=true){
       // May need to rethink some choices here
       // Update position prior to playing
-      this.animations[name].loop = loop;
-      this.animations[name].onComplete = () => {
+      let animation = this.getChildNamedSpriteAnimation(name);
+      animation.loop = loop;
+      animation.onComplete = () => {
         // Remove this animation, then return to default, unless it is already default OR delete_on_complete is false
         if(name != "Default" || !delete_on_complete){
-          stage.removeChild(this.animations[name]);
-          stage.addChild(this.animations["Default"])
+          animation.stop();
+          animation.visible = false;
+          // Return to default
+          let default_animation = this.getChildNamedSpriteAnimation("Default");
+          default_animation.play();
+          default_animation.visible = true;
         }
       }
-      stage.addChild(this.animations[name]);
-      this.animations[name].play();
+      animation.visible = true;
+      animation.play();
     }
 }
 class MobileEntity extends Entity {
-    constructor(x, y, animations, x_velocity, y_velocity){
-      super(x, y, animations);
+    constructor(name, parent, x, y, animations, x_velocity, y_velocity){
+      super(name, parent, x, y, animations);
       this.x_velocity = x_velocity;
       this.y_velocity = y_velocity;
     }
@@ -64,10 +103,31 @@ class MobileEntity extends Entity {
       this.y += this.y_velocity * delta;
     }
 }
+class MobileClickableEntity extends MobileEntity {
+  constructor(name, parent, x, y, animations, x_velocity, y_velocity,  on_click){
+    super(name, parent, x, y, animations, x_velocity, y_velocity);
+    this.on_click = on_click;
+    //should make all animations call onClick function on click
+    this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.interactive = true;
+        named_sprite_animation.on("pointertap", this.on_click, this);
+    });
+  }
+}
+class ClickableEntity extends Entity {
+  constructor(name, parent, x, y, animations, on_click){
+    super(name, parent, x, y, animations);
+    this.on_click = on_click;
+    //should make all animations call onClick function on click
+    this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.interactive = true;
+        named_sprite_animation.on("pointertap", this.on_click, this);
+    });
+  }
+}
 class StationaryDefender extends Entity {
-    constructor(x, y, animations, name, description ,price, ability) {
-      super(x, y, animations);
-      this.name = name;
+    constructor(name, parent, x, y, animations, description , price, ability) {
+      super(name, parent, x, y, animations);
       this.description = description;
       this.price = price;
       this.ability = ability;
@@ -75,9 +135,8 @@ class StationaryDefender extends Entity {
     }
 }
 class MobileDefender extends MobileEntity {
-    constructor(x, y, animations, x_velocity, y_velocity, name, description, price, ability) {
-      super(x, y, animations, x_velocity, y_velocity);
-      this.name = name;
+    constructor(name, parent, x, y, animations, x_velocity, y_velocity, description, price, ability) {
+      super(name, parent, x, y, animations, x_velocity, y_velocity);
       this.description = description;
       this.price = price;
       this.ability = ability;
@@ -85,8 +144,8 @@ class MobileDefender extends MobileEntity {
     }
 }
 class Enemy extends MobileEntity {
-    constructor(x, y, animations, x_velocity, y_velocity, health, ability) {
-      super(x, y, animations, x_velocity, y_velocity);
+    constructor(name, parent, x, y, animations, x_velocity, y_velocity, health, ability) {
+      super(name, parent, x, y, animations, x_velocity, y_velocity);
       this.health = health;
       this.ability = ability;
     }
@@ -94,9 +153,12 @@ class Enemy extends MobileEntity {
 export {
     Entity,
     MobileEntity,
+    ClickableEntity,
+    MobileClickableEntity,
     StationaryDefender,
     MobileDefender,
     Enemy,
-    getActiveEntities
+    getActiveEntities,
+    getActiveEntity
 }//         (-0-)
 // 8==D~-_ (. )(. )
