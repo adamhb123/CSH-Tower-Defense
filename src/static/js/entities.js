@@ -70,6 +70,12 @@ class Entity {
     setAnimationSpeed(name, speed){
       this.getChildNamedSpriteAnimation(name).animationSpeed = speed;
     }
+    setAnimationWidth(name, width){
+      this.getChildNamedSpriteAnimation(name).width = width;
+    }
+    setAnimationHeight(name, width){
+      this.getChildNamedSpriteAnimation(name).height = height;
+    }
     playAnimation(name, loop=true, delete_on_complete=true){
       // May need to rethink some choices here
       // Update position prior to playing
