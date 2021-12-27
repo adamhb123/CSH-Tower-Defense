@@ -1,3 +1,5 @@
+import * as Utility from "/js/utility.js";
+import * as Resources from "/js/resources.js"
   // Contains all active entities
 const ACTIVE_ENTITIES = [];
 
@@ -7,7 +9,6 @@ function getActiveEntities(){
 function getActiveEntity(name){
   let requestedEntity = null;
   ACTIVE_ENTITIES.forEach(entity => {
-    console.log(entity.name);
     if(entity.name == name) {
       requestedEntity = entity;
       return;
@@ -25,10 +26,10 @@ class Entity {
       // ALL animations should have a "Default" entry to return to upon
       // Completion of other animations
       this.container = new PIXI.Container();
+      this.container.type = "Container";
       (this.parent instanceof Entity ? this.parent.container : this.parent).addChild(this.container);
-      // Add list of NamedSpriteAnimations to container
       animations.forEach(animation => {
-        this.container.addChild(animation);
+        this.container.addChild(new Resources.NamedAnimatedSprite(animation.name, animation.textures));
       });
       this.update_callbacks = {};
       ACTIVE_ENTITIES.push(this);
@@ -51,6 +52,24 @@ class Entity {
       // Removes a function from the update_callbacks list
       delete this.update_callbacks[name];
     }
+    callFunctionOnChildSprites(f){
+      // Calls given function on all child sprites
+      function recursiveInvoke(element){
+        if(element.type === "Container"){
+          element.children.forEach((child) => {
+            recursiveInvoke(child);
+          });
+        }
+        else{
+          f(element);
+        }
+      }
+      this.container.children.forEach(element => {
+        if(element.type === "Container"){
+          recursiveInvoke(element);
+        }
+      });
+    }
     getChildNamedSpriteAnimation(name){
       let retrieved_animation = undefined;
       this.container.children.forEach(named_sprite_animation => {
@@ -69,6 +88,24 @@ class Entity {
     }
     setAnimationSpeed(name, speed){
       this.getChildNamedSpriteAnimation(name).animationSpeed = speed;
+    }
+    setScaleFromWindow(width, height){
+      this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.width = Utility.scaleX(width);
+        named_sprite_animation.height = Utility.scaleY(height);
+      });
+    }
+    setScaleFromParent(width, height){
+      this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.width = this.parent.width * width;
+        named_sprite_animation.height = this.parent.height * height;
+      });
+    }
+    scaleXForChildren(percentage){
+      return this.width * percentage;
+    }
+    scaleYForChildren(percentage){
+      return this.height * percentage;
     }
     playAnimation(name, loop=true, delete_on_complete=true){
       // May need to rethink some choices here
@@ -110,18 +147,30 @@ class MobileClickableEntity extends MobileEntity {
     //should make all animations call onClick function on click
     this.container.children.forEach(named_sprite_animation => {
         named_sprite_animation.interactive = true;
-        named_sprite_animation.on("pointertap", this.on_click, this);
+        named_sprite_animation.on("click", this.on_click, this);
     });
   }
+  setOnClick(func){
+      this.container.children.forEach(named_sprite_animation => {
+          named_sprite_animation.interactive = true;
+          named_sprite_animation.on("click", func, this);
+      });
+   }
 }
 class ClickableEntity extends Entity {
   constructor(name, parent, x, y, animations, on_click){
     super(name, parent, x, y, animations);
-    this.on_click = on_click;
+    this.on_click = on_click != null ? on_click : ()=>{};
     //should make all animations call onClick function on click
     this.container.children.forEach(named_sprite_animation => {
         named_sprite_animation.interactive = true;
-        named_sprite_animation.on("pointertap", this.on_click, this);
+        named_sprite_animation.on("click", this.on_click, this);
+    });
+  }
+  setOnClick(func){
+    this.container.children.forEach(named_sprite_animation => {
+        named_sprite_animation.interactive = true;
+        named_sprite_animation.on("click", func, this);
     });
   }
 }

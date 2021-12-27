@@ -1,13 +1,14 @@
-class Callback {
-  constructor(name, func){
-    this.name = name;
-    this._func = func;
-  }
-  call(){
-    return this._func();
-  }
+import { app } from "/js/game.js";
+
+function scaleX(percentage){
+  return percentage * app.screen.width;
+}
+
+function scaleY(percentage){
+  return percentage * app.screen.height;
 }
 
 export {
-  Callback
+  scaleX, 
+  scaleY
 }

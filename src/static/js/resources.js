@@ -8,6 +8,7 @@ class NamedAnimatedSprite extends PIXI.AnimatedSprite{
   constructor(name, textures){
     super(textures);
     this.name = name;
+    this.type = "Sprite";
   }
 }
 
@@ -53,7 +54,18 @@ function onLoadingComplete(e){
     LOADED_SPRITES.EHouseLogoAnimation = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.EHouseLogoAnimation)];
     LOADED_SPRITES.GenericEnemy01 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.GenericEnemy01)];
     LOADED_SPRITES.Background = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Background)];
-    
+    LOADED_SPRITES.PlaceholderExpandMenuButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderKillMenuButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderMenuBackground = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderToggleTowerMenu = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderToggleBuyMenu = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender1 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender2 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender3 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender4 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender5 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderDefender6 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderTowerMenu = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
     return "Finished loading all resources!";
 }
 function loadResources(resource_obj){
@@ -69,12 +81,14 @@ function loadResources(resource_obj){
         .add("EHouseLogoAnimationSpritesheet", "assets/misc/EHouseLogoANIMATION01.png")
         .add("GenericEnemy01Spritesheet", "assets/entities/enemies/GenericEnemy01.png")
         .add("BackgroundSpritesheet", "assets/misc/background.png")
+        .add("PlaceholderSpritesheet", "assets/misc/placeholder.png")
         .load((loader, resources) => {
           // !! Load TEXTURES here !!
           LOADED_TEXTURES.CSHLogoAnimation = textureListFromFullSheet(new PIXI.Sprite(resources.CSHLogoAnimationSpritesheet.texture), 1, 21);
           LOADED_TEXTURES.EHouseLogoAnimation = textureListFromFullSheet(new PIXI.Sprite(resources.EHouseLogoAnimationSpritesheet.texture), 1, 4);
           LOADED_TEXTURES.GenericEnemy01 = textureListFromFullSheet(new PIXI.Sprite(resources.GenericEnemy01Spritesheet.texture), 1, 1);
           LOADED_TEXTURES.Background = textureListFromFullSheet(new PIXI.Sprite(resources.BackgroundSpritesheet.texture), 1, 1);
+          LOADED_TEXTURES.Placeholder = textureListFromFullSheet(new PIXI.Sprite(resources.PlaceholderSpritesheet.texture), 1, 1);
         });
         // Setup dispatch signals (see functions for description)
         loader.onProgress.add(() => onLoadingFileProgress); 
