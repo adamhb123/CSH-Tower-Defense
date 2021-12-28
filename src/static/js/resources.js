@@ -54,11 +54,10 @@ function onLoadingComplete(e){
     LOADED_SPRITES.EHouseLogoAnimation = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.EHouseLogoAnimation)];
     LOADED_SPRITES.GenericEnemy01 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.GenericEnemy01)];
     LOADED_SPRITES.Background = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Background)];
-    LOADED_SPRITES.PlaceholderExpandMenuButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
-    LOADED_SPRITES.PlaceholderKillMenuButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
-    LOADED_SPRITES.PlaceholderMenuBackground = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
-    LOADED_SPRITES.PlaceholderToggleTowerMenu = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
-    LOADED_SPRITES.PlaceholderToggleBuyMenu = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderMuteButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderCSHTowerDefenseLogo = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
+    LOADED_SPRITES.PlaceholderMuteButton = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
     LOADED_SPRITES.PlaceholderDefender1 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
     LOADED_SPRITES.PlaceholderDefender2 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];
     LOADED_SPRITES.PlaceholderDefender3 = [new NamedAnimatedSprite("Default", LOADED_TEXTURES.Placeholder)];

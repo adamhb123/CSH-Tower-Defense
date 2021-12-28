@@ -1,5 +1,6 @@
 import * as Utility from "/js/utility.js";
-import * as Resources from "/js/resources.js"
+import * as Resources from "/js/resources.js";
+import { app } from "/js/game.js";
   // Contains all active entities
 const ACTIVE_ENTITIES = [];
 
@@ -52,7 +53,7 @@ class Entity {
       // Removes a function from the update_callbacks list
       delete this.update_callbacks[name];
     }
-    callFunctionOnChildSprites(f){
+    callFunctionOnChildSprites(func){
       // Calls given function on all child sprites
       function recursiveInvoke(element){
         if(element.type === "Container"){
@@ -61,7 +62,7 @@ class Entity {
           });
         }
         else{
-          f(element);
+          func(element);
         }
       }
       this.container.children.forEach(element => {
@@ -94,18 +95,6 @@ class Entity {
         named_sprite_animation.width = Utility.scaleX(width);
         named_sprite_animation.height = Utility.scaleY(height);
       });
-    }
-    setScaleFromParent(width, height){
-      this.container.children.forEach(named_sprite_animation => {
-        named_sprite_animation.width = this.parent.width * width;
-        named_sprite_animation.height = this.parent.height * height;
-      });
-    }
-    scaleXForChildren(percentage){
-      return this.width * percentage;
-    }
-    scaleYForChildren(percentage){
-      return this.height * percentage;
     }
     playAnimation(name, loop=true, delete_on_complete=true){
       // May need to rethink some choices here
@@ -147,31 +136,97 @@ class MobileClickableEntity extends MobileEntity {
     //should make all animations call onClick function on click
     this.container.children.forEach(named_sprite_animation => {
         named_sprite_animation.interactive = true;
-        named_sprite_animation.on("click", this.on_click, this);
+        named_sprite_animation.on("pointertap", this.on_click, this);
     });
   }
   setOnClick(func){
       this.container.children.forEach(named_sprite_animation => {
           named_sprite_animation.interactive = true;
-          named_sprite_animation.on("click", func, this);
+          named_sprite_animation.on("pointertap", func, this);
       });
    }
 }
 class ClickableEntity extends Entity {
-  constructor(name, parent, x, y, animations, on_click){
+  constructor(name, parent, x, y, animations, on_click, draggable=false){
     super(name, parent, x, y, animations);
     this.on_click = on_click != null ? on_click : ()=>{};
     //should make all animations call onClick function on click
+    this.mouse_down = false;
+    // theres probably gonna be a funcion called while an element is dragged,
+    // like whether or not the placement for the tower is valid or whatever.
+    this.drag_callback = () => {};
+    this.mouseX = -1;
+    this.mouseY = -1;
+    this.timestamp = -1;
+    this.mouse_down_duration = -1;
     this.container.children.forEach(named_sprite_animation => {
-        named_sprite_animation.interactive = true;
-        named_sprite_animation.on("click", this.on_click, this);
+      named_sprite_animation.interactive = true;
+      named_sprite_animation.on("pointertap", () => {
+        if(this.mouse_down_duration < 100){ 
+          this.on_click();
+          this.mouse_down = false;
+        }else{
+          this.call_on_click_function = true;
+        }
+      }, this);
+      if(draggable){
+        named_sprite_animation.on("pointerup", () => {
+          this.mouse_down_duration = Date.now() - this.timestamp;
+          this.mouse_down = false;
+          this.mouseX = -1;
+          this.mouseY = -1;
+        });
+        named_sprite_animation.on("pointerdown", (e) => {
+          this.timestamp = Date.now();
+          this.mouse_down = true;
+          this.mouseX = e.data.global.x;
+          this.mouseY = e.data.global.y;
+        });
+        named_sprite_animation.on("pointermove", (e) => {
+          if(this.mouse_down){
+            this.x += (e.data.global.x - this.mouseX);
+            this.y += (e.data.global.y - this.mouseY);
+            this.mouseX = e.data.global.x;
+            this.mouseY = e.data.global.y; 
+          }
+        });
+      }
     });
+    if(draggable){
+      this.addUpdateCallback("dragFunctionCall", () => {
+        if(this.mouse_down){
+          this.drag_callback();
+        }
+      });
+    }
+  }
+  setDragCallback(func){
+    this.drag_callback = func;
   }
   setOnClick(func){
-    this.container.children.forEach(named_sprite_animation => {
-        named_sprite_animation.interactive = true;
-        named_sprite_animation.on("click", func, this);
+    this.on_click = func;
+  }
+}
+
+class Button extends ClickableEntity {
+  constructor(name, parent, x, y, animations, on_click, text, draggable=false){
+    super(name, parent, x, y, animations, on_click, draggable);
+    this.text_sprite = new PIXI.Text(text, {
+      fontSize: 21,
     });
+    this.text_sprite.x = x;
+    this.text_sprite.y = y;
+    app.stage.addChild(this.text_sprite);
+    console.log(this.text_sprite);
+  }
+  updateText(text, x, y, width, height){
+    // If you don't want to update a property, just leave null or undefined
+    if(text != undefined) this.text_sprite.text;
+    if(x != undefined) this.text_sprite.x = x;
+    if(y != undefined) this.text_sprite.y = y;
+    if(y != undefined) this.text_sprite.y = y;
+    if(y != undefined) this.text_sprite.y = y;
+    this.text_sprite.updateText();
   }
 }
 class StationaryDefender extends Entity {
@@ -204,6 +259,7 @@ export {
     MobileEntity,
     ClickableEntity,
     MobileClickableEntity,
+    Button,
     StationaryDefender,
     MobileDefender,
     Enemy,
