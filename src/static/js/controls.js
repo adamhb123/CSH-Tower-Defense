@@ -1,5 +1,13 @@
 import { app } from "/js/game.js";
 import { getActiveEntity } from "/js/entities.js";
+// Convenience method, tracks last known mouse position by hooking onto some mouse events
+const MOUSE_POSITION = {x: 0, y: 0};
+let _trackMousePos = (e) => {
+  MOUSE_POSITION.x = e.clientX;
+  MOUSE_POSITION.y = e.clientY;
+}
+// mouseup and mousedown are probably unnecessary, if a big performance hit results, just remove them
+["mousedown", "mousemove", "mouseup"].forEach(event_name => window.addEventListener(event_name, _trackMousePos));
 
 class Key {
   // This class represents either a keyboard key or a mouse button
@@ -118,5 +126,6 @@ function initialize(){
 
 export {
   initialize,
-  Key
+  Key,
+  MOUSE_POSITION
 }
