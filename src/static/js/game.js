@@ -4,6 +4,8 @@ import * as Controls from "/js/controls.js";
 import * as Utility from "/js/utility.js";
 import * as Menu from "/js/menu.js";
 const app = new PIXI.Application({resizeTo: window, resizeThrottle: 250 });
+PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+//these will be used to render in defender buy cards and defender entities
 
 function game_loop(delta){
   // Update Entity positions
@@ -16,24 +18,29 @@ function initialize(){
   document.body.appendChild(app.view);
   Resources.loadResources().then((exit_msg)=>{
     console.log(exit_msg);
-    let Map = new Entities.ClickableEntity("Map", app.stage, 0, 0, Resources.getSpriteAnimations("Background"), null, true);
+    let Map = new Entities.ClickableEntity("Map", app.stage, 0, 0, Resources.getSpriteAnimations("Background"), null, false);
     //Map.setOnClick(e => Map.callFunctionOnChildSprites(child => child._playing ? child.stop() : child.play()));
     Map.setScaleFromWindow(1, 1);
-    let B = new Entities.Button("button", Map, Utility.scaleX(0.5), Utility.scaleY(0.5), Resources.getSpriteAnimations("PlaceholderButton"), null, "balls");
-    B.setScaleFromWindow(0.2, 0.2)
+    //r(name, parent, x, y, width, height, animations, on_click, text, draggable=false){
+    //Menu.buy_menu(app.stage);
+    
     // Debug / Playground
     let CSH_logo_entity = new Entities.MobileEntity("CSHLogoAnimation", Map, 50, 20, Resources.getSpriteAnimations("CSHLogoAnimation"), 0, 0);
+    CSH_logo_entity.playAnimation("Default");
     let CSH_logo_entity_2 = new Entities.MobileEntity("CSHLogoAnimation2", Map, 50, 20, Resources.getSpriteAnimations("CSHLogoAnimation"), 0, 0);
+    
     //r(name, parent, x, y, animations, on_click, draggable=false)
     let EHouse_logo_entity = new Entities.ClickableEntity("EHouseLogoAnimation", Map, 50, 20, Resources.getSpriteAnimations("EHouseLogoAnimation"), e => console.log("balls"), true);
-    Map.playAnimation("Default");
+    
     CSH_logo_entity.playAnimation("Default");
     CSH_logo_entity.addUpdateCallback("Rotator",(self, delta) => {
       self.x = 160 + 80 * Math.cos(.002*Date.now());
       self.y = 160 + 20 * Math.sin(.001*Date.now());
     });
+   
     EHouse_logo_entity.playAnimation("Default");
-    EHouse_logo_entity.setAnimationSpeed("Default", .5);
+    
+    EHouse_logo_entity.setAnimationSpeed(.5);
     /*EHouse_logo_entity.addUpdateCallback("Rotator",(self, delta) => {
       self.x = 160 + 60 * Math.sin(.001*Date.now());
       self.y = 160 + 40 * Math.cos(.003*Date.now());
@@ -51,4 +58,8 @@ function main(){
 }
 
 main();
-export { app }
+
+export { 
+  app
+   
+}
