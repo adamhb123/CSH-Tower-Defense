@@ -27,7 +27,37 @@ const SPRITES_TO_LOAD = [
   },
   {"StartMenuButton" :
     {"Default": new QueuedTexture("assets/misc/start_menu_button.png", 1, 1)}
-  }
+  },
+  {"DefenderMenuButton" :
+    {"Default": new QueuedTexture("assets/misc/defender_menu_button.png", 1, 1)}
+  },
+  {"SoundButtonOn" :
+    {"Default": new QueuedTexture("assets/misc/sound_button_on.png", 1, 1)}
+  },
+  {"SoundButtonOff" :
+    {"Default": new QueuedTexture("assets/misc/sound_button_off.png", 1, 1)}
+  },
+  {"DefenderMenu" :
+    {"Default": new QueuedTexture("assets/misc/defender_menu.png", 1, 1)}
+  },
+  {"DefenderMenuButtonHover" :
+    {"Default": new QueuedTexture("assets/misc/defender_menu_button_hover.png", 1, 1)}
+  },
+  {"DefenderMenuButtonFlipped" :
+    {"Default": new QueuedTexture("assets/misc/defender_menu_button_flipped.png", 1, 1)}
+  },
+  {"DefenderPopup" :
+    {"Default": new QueuedTexture("assets/misc/defender_popup.png", 1, 1)}
+  },
+  {"ColorBackground" :
+    {"Default": new QueuedTexture("assets/misc/color_background.png", 1, 1)}
+  },
+  {"GreenCircle" :
+    {"Default": new QueuedTexture("assets/misc/green_circle.png", 1, 1)}
+  },
+  {"RedCircle" :
+    {"Default": new QueuedTexture("assets/misc/red_circle.png", 1, 1)}
+  },
 ];
 
 class NamedAnimatedSprite extends PIXI.AnimatedSprite{
@@ -53,8 +83,6 @@ function textureListFromFullSheet(sheetsprite, frame_rows, frame_columns){
 }
 
 function getSpriteAnimations(name){
-  console.log(name);
-  console.log(LOADED_SPRITES[name]);
   return LOADED_SPRITES[name];
 }
 
@@ -72,12 +100,10 @@ function onLoadingFileError(){
 }
 function onLoadingFile(e){
     // Called once per loaded file
-    console.log(e._boundLoadResource);
 }
 function onLoadingComplete(e){
     // Called once when the queued resources all load
     app.stage.removeChild(LOADING_TEXT);
-      console.log(LOADED_SPRITES);
 
     /*LOADED_SPRITES.CSHLogoAnimation = ("CSHLogoAnimation", new NamedAnimatedSprite("Default", LOADED_TEXTURE_GROUPS.CSHLogoAnimation));
     LOADED_SPRITES.EHouseLogoAnimation = ("EHouseLogoAnimation", new NamedAnimatedSprite("Default", LOADED_TEXTURE_GROUPS.EHouseLogoAnimation));
@@ -109,7 +135,6 @@ function loadResources(resource_obj){
           Object.keys(spritestl_group[group_key]).forEach(animation_key => {
             let queued_texture = spritestl_group[group_key][animation_key];
             loader.add(group_key+animation_key, queued_texture.file);
-            console.log(group_key+animation_key);
           });
         });
       });

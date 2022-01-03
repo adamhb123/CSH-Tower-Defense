@@ -6,7 +6,9 @@ import * as Menu from "/js/menu.js";
 const app = new PIXI.Application({resizeTo: window, resizeThrottle: 250 });
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 //these will be used to render in defender buy cards and defender entities
-
+const ACTIVE_DEFENDERS = [];
+//this looks dumb but primitives dont pass by reference in js so its easier.
+const MONEY = {money: "100"};
 function game_loop(delta){
   // Update Entity positions
   Entities.getActiveEntities().forEach(entity => {
@@ -23,7 +25,7 @@ function initialize(){
     Map.setScaleFromWindow(1, 1);
     //r(name, parent, x, y, width, height, animations, on_click, text, draggable=false){
     //Menu.buy_menu(app.stage);
-    
+    let buy_menu = Menu.buy_menu(app.stage)
     // Debug / Playground
     let CSH_logo_entity = new Entities.MobileEntity("CSHLogoAnimation", Map, 50, 20, Resources.getSpriteAnimations("CSHLogoAnimation"), 0, 0);
     CSH_logo_entity.playAnimation("Default");
@@ -31,7 +33,6 @@ function initialize(){
     
     //r(name, parent, x, y, animations, on_click, draggable=false)
     let EHouse_logo_entity = new Entities.ClickableEntity("EHouseLogoAnimation", Map, 50, 20, Resources.getSpriteAnimations("EHouseLogoAnimation"), e => console.log("balls"), true);
-    
     CSH_logo_entity.playAnimation("Default");
     CSH_logo_entity.addUpdateCallback("Rotator",(self, delta) => {
       self.x = 160 + 80 * Math.cos(.002*Date.now());
@@ -60,6 +61,7 @@ function main(){
 main();
 
 export { 
-  app
-   
+  app,
+   ACTIVE_DEFENDERS, 
+   MONEY
 }
