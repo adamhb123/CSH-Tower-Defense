@@ -20,7 +20,8 @@ const SPRITES_TO_LOAD = [
     {"Default": new QueuedTexture("assets/misc/EHouseLogoANIMATION01.png", 1, 4)}
   },
   {"GenericEnemy01": 
-    {"Default": new QueuedTexture("assets/entities/enemies/GenericEnemy01.png", 1, 1)}
+    {"Default": new QueuedTexture("assets/misc/tester_default.png", 1, 1),
+    "Attack": new QueuedTexture("assets/misc/tester_attack.png", 1, 1)}
   },
   {"Background":
     {"Default": new QueuedTexture("assets/misc/background.png", 1, 1)}

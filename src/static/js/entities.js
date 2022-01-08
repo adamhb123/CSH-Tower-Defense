@@ -1,6 +1,6 @@
 import * as Utility from "/js/utility.js";
 import * as Resources from "/js/resources.js";
-import { app } from "/js/game.js";
+import { app, ACTIVE_ENEMIES_LIST } from "/js/game.js";
   // Contains all active entities
 const ACTIVE_ENTITIES = [];
 
@@ -31,10 +31,12 @@ class Entity {
     if(this.parent != null){
       (this.parent instanceof Entity ? this.parent.container : this.parent).addChild(this.container);
     }
+    this.animations = animations;
     Object.keys(animations).forEach(animation_key => {
       this.container.addChild(new Resources.NamedAnimatedSprite(animation_key, animations[animation_key]));
     });
     this.update_callbacks = {};
+    this.playAnimation("Default");
     ACTIVE_ENTITIES.push(this);
   }
   getSizeOfDefaultAnimation(){
@@ -65,6 +67,19 @@ class Entity {
     // Removes a function from the update_callbacks list
     delete this.update_callbacks[name];
   }
+  destroy(){
+    ACTIVE_ENTITIES.forEach((i, idx) => {
+      if(this == i) {
+        ACTIVE_ENTITIES.splice(idx, 1);
+        return;
+      }
+    });
+    if(this.parent instanceof PIXI.Container){
+      this.parent.removeChild(this.container);
+    }else{
+      this.parent.container.removeChild(this.container);
+    }
+  }
   callFunctionOnChildSprites(func){
     // Calls given function on all child sprites
     function recursiveInvoke(element){
@@ -91,7 +106,7 @@ class Entity {
         return;
       }
     });
-    return retrieved_animation == undefined ? "not valid animation" : retrieved_animation;
+    return retrieved_animation == undefined ? null : retrieved_animation;
   }
   setVisible(){
     this.callFunctionOnChildSprites(sprite_animation => sprite_animation.visible = false);
@@ -124,7 +139,7 @@ class Entity {
     });
   }
   //this along with the updateBMText method should be used for non-constant text
-  addBMText(text, font_size, relative_x, relative_y){
+  addBMText(text, font_size, relative_x, relative_y, offset_x, offset_y){
     PIXI.BitmapFont.from("comic", {
       fill: "#ffffff", // White, will be colored later
       fontFamily: "Comic Sans MS",
@@ -133,15 +148,16 @@ class Entity {
     this.text = text;
     let size = this.getSizeOfDefaultAnimation();
     let anch = this.getChildNamedSpriteAnimation("Default").anchor;
-    let cumpump = new PIXI.TextStyle({ fontFamily: "\"Comic Sans MS\", cursive, sans-serif", fontSize: font_size});
     this.text_sprite = new PIXI.BitmapText(this.text,
     {
         fontName: "comic",
-        fontSize: font_size, // Making it too big or too small will look bad
-        tint: 0x000000 // Here we make it red.
+        fontSize: font_size,
+        tint: 0x000000 
     });
-    this.text_sprite.x = relative_x * size.width - (anch.x * size.width);
-    this.text_sprite.y = relative_y * size.height - (anch.y * size.height);
+    this.text_sprite.x = relative_x * size.width - (anch.x * size.width) + offset_x;
+    this.text_sprite.y = relative_y * size.height - (anch.y * size.height) + offset_y;
+    this.text_sprite.scale.x = 4;
+    this.text_sprite.scale.y = 4;
     this.text_sprite.anchor.set(0.5, 0.5);
     this.addUpdateCallback("UpdateTextPosition", ()=>{
       this.text_sprite.x = relative_x * size.width - (anch.x * size.width);
@@ -156,8 +172,8 @@ class Entity {
     this.text = text;
     let size = this.getSizeOfDefaultAnimation();
     let anch = this.getChildNamedSpriteAnimation("Default").anchor;
-    let cumpump = new PIXI.TextStyle({ fontFamily: "\"Comic Sans MS\", cursive, sans-serif", fontSize: font_size});
-    this.text_sprite = new PIXI.Text(text, cumpump);
+    let text_style = new PIXI.TextStyle({ fontFamily: "\"Verdana\", cursive, sans-serif", fontSize: font_size});
+    this.text_sprite = new PIXI.Text(text, text_style);
     this.text_sprite.x = relative_x * size.width - (anch.x * size.width);
     this.text_sprite.y = relative_y * size.height - (anch.y * size.height);
     this.text_sprite.anchor.set(0.5, 0.5);
@@ -200,8 +216,8 @@ class MobileEntity extends Entity {
   update(delta){
     super.update(delta);
     // To be executed in the primary game loop
-    this.x += this.x_velocity * delta;
-    this.y += this.y_velocity * delta;
+    this.x += this.x_velocity instanceof Function ? this.x_velocity() : this.x_velocity * delta;
+    this.y += this.y_velocity instanceof Function ? this.y_velocity() : this.y_velocity * delta;
   }
 }
 class MobileClickableEntity extends MobileEntity {
@@ -296,7 +312,6 @@ class ClickableEntity extends Entity {
     this.on_click = func;
   }
 }
-
 //this should be removed 
 class Button extends ClickableEntity {
   constructor(name, parent, x, y, width, height, animations, on_click, text, draggable=false, text_size=2.5){
@@ -316,16 +331,65 @@ class Defender extends ClickableEntity {
     super(name, parent, x, y, animations, null);
     this.attack_info = attack_info;
     this.attack_animations = attack_animations;
+    this.last_attack = Date.now();
+    this.addUpdateCallback("attack", () => {
+      if(ACTIVE_ENEMIES_LIST.length > 0){
+        if(this.attack_info.type == "PrecisionAttack"){
+          if(Date.now() - this.last_attack > this.attack_info.frequency){
+            this.sendPrecisionAttack(null);
+            this.last_attack = Date.now();
+          }
+        }
+      }
+    })
   }
-  sendPrecisionAttack(enemies){
-    let attack = new MobileEntity("attack", this, this.x, this.y, this.attack_animations, 0, 0);
+  sendPrecisionAttack(targeting){
+    //this.playAnimation("Attack"); 
+    let projectile = new Projectile("projectile", this, 0, 0, Resources.getSpriteAnimations("GenericEnemy01"), () => ACTIVE_ENEMIES_LIST.length == 0 ? null : ACTIVE_ENEMIES_LIST[0]);
   }
 }
+class Projectile extends MobileEntity {
+  constructor(name, parent, x, y, animations, findTarget, speed=2){
+    super(name, parent, x, y, animations, 0, 0);
+    this.speed = speed;
+    this.findTarget = findTarget;
+    this.target = findTarget();
+    this.addUpdateCallback("checkIfHitTarget", () => {
+      if(this.target != null){
+        if(Utility.distance(this.getGlobalX(), this.getGlobalY(), this.target.x, this.target.y) < 5){
+          this.target.health -= this.parent.attack_info.damage;
+          this.destroy();
+          if(this.target.health <= 0) this.target.destroy();
+        }
+      }
+    })
+    this.addUpdateCallback("checkIfInBounds", () => {
+      if(this.getGlobalX() > Utility.scaleX(1) || this.getGlobalY() > Utility.scaleY(1) || this.getGlobalX() < 0 || this.getGlobalY() < 0){
+        this.destroy();
+      }
+    })
+    this.addUpdateCallback("updateTarget", () => {
+      if(this.target != this.findTarget()){
+        this.target = this.findTarget();
+      }
+    })
+    this.addUpdateCallback("updateVelocity", () => {
+      if(this.target != null){
+        let delta_x = this.target.x - this.getGlobalX();
+        let delta_y = this.target.y - this.getGlobalY();
+        this.x_velocity = this.speed * delta_x / Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
+        this.y_velocity = this.speed * delta_y / Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
+        //scuffed but will work for now
+      }
+    })
+  }
+}
+
 class DefenderInfo {
-  constructor(name, description, animation){
+  constructor(name, description, animations){
     this.name = name;
     this.description = description;
-    this.animation = animation;
+    this.animations = animations;
   }
 }
 class MobileDefender extends MobileEntity {
@@ -338,10 +402,20 @@ class MobileDefender extends MobileEntity {
   }
 }
 class Enemy extends MobileEntity {
-  constructor(name, parent, x, y, animations, x_velocity, y_velocity, health, ability) {
+  constructor(name, parent, x, y, animations, x_velocity, y_velocity, health, ability, spawn_point) {
     super(name, parent, x, y, animations, x_velocity, y_velocity);
+    this.index = ACTIVE_ENEMIES_LIST.length;
+    ACTIVE_ENEMIES_LIST.push(this);
     this.health = health;
     this.ability = ability;
+    this.spawn_point = spawn_point;
+  }
+  destroy(){
+    super.destroy();
+    for(let i = this.index + 1; i < ACTIVE_ENEMIES_LIST.length; i++){
+      ACTIVE_ENEMIES_LIST[i].index--;
+    }
+    ACTIVE_ENEMIES_LIST.splice(this.index, 1);
   }
 }
 export {
@@ -350,10 +424,10 @@ export {
   ClickableEntity,
   MobileClickableEntity,
   Button,
-  StationaryDefender,
   MobileDefender,
   DefenderInfo,
   Enemy,
+  Defender,
   getActiveEntities,
   getActiveEntity
 }//         (-0-)
