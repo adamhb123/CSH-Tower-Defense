@@ -1,6 +1,6 @@
 import * as Utility from "/js/utility.js";
 import * as Resources from "/js/resources.js";
-import { app, ACTIVE_ENEMIES_LIST } from "/js/game.js";
+import { app, ACTIVE_ENEMIES_LIST, ACTIVE_SPLASH_PROJECTILES_LIST, LIVES} from "/js/game.js";
   // Contains all active entities
 const ACTIVE_ENTITIES = [];
 
@@ -192,6 +192,13 @@ class Entity {
     // Update position prior to playing
     let animation = this.getChildNamedSpriteAnimation(name);
     animation.loop = loop;
+    // Stop all other animations, and make them invisible
+    this.container.children.forEach(named_sprite_animation => {
+      if(name != named_sprite_animation.name){
+        named_sprite_animation.stop();
+        named_sprite_animation.visible = false;
+      }
+    });
     animation.onComplete = () => {
       // Remove this animation, then return to default, unless it is already default OR delete_on_complete is false
       if(name != "Default" || !delete_on_complete){
@@ -334,9 +341,14 @@ class Defender extends ClickableEntity {
     this.last_attack = Date.now();
     this.addUpdateCallback("attack", () => {
       if(ACTIVE_ENEMIES_LIST.length > 0){
-        if(this.attack_info.type == "PrecisionAttack"){
+        if(this.attack_info.type == "Precision"){
           if(Date.now() - this.last_attack > this.attack_info.frequency){
             this.sendPrecisionAttack(null);
+            this.last_attack = Date.now();
+          }
+        }else if(this.attack_info.type == "Splash"){
+          if(Date.now() - this.last_attack > this.attack_info.frequency){
+            this.sendSplashAttack(null);
             this.last_attack = Date.now();
           }
         }
@@ -345,41 +357,72 @@ class Defender extends ClickableEntity {
   }
   sendPrecisionAttack(targeting){
     //this.playAnimation("Attack"); 
-    let projectile = new Projectile("projectile", this, 0, 0, Resources.getSpriteAnimations("GenericEnemy01"), () => ACTIVE_ENEMIES_LIST.length == 0 ? null : ACTIVE_ENEMIES_LIST[0]);
+    let projectile = new Projectile("projectile", this, 0, 0, Resources.getSpriteAnimations("RedCircle"), () => ACTIVE_ENEMIES_LIST.length == 0 ? null : ACTIVE_ENEMIES_LIST[0], {type: "Precision", speed: 2, damage: this.attack_info.damage});
+  }
+  sendSplashAttack(targeting){
+    let projectile = new Projectile("projectile", this, 0, 0, Resources.getSpriteAnimations("RedCircle"), () => ACTIVE_ENEMIES_LIST.length == 0 ? null : ACTIVE_ENEMIES_LIST[0], {type: "Splash", speed: 2, duration: 5000, radius: 25, damage: this.attack_info.damage})
   }
 }
 class Projectile extends MobileEntity {
-  constructor(name, parent, x, y, animations, findTarget, speed=2){
+  constructor(name, parent, x, y, animations, findTarget, attack_info, speed=2){
     super(name, parent, x, y, animations, 0, 0);
-    this.speed = speed;
+    this.setScale(Utility.scaleX(0.02), Utility.scaleX(0.02));
+    this.attack_info = attack_info;
     this.findTarget = findTarget;
     this.target = findTarget();
-    this.addUpdateCallback("checkIfHitTarget", () => {
-      if(this.target != null){
-        if(Utility.distance(this.getGlobalX(), this.getGlobalY(), this.target.x, this.target.y) < 5){
-          this.target.health -= this.parent.attack_info.damage;
-          this.destroy();
-          if(this.target.health <= 0) this.target.destroy();
-        }
-      }
-    })
+    this.time_activated = -1;
+    
     this.addUpdateCallback("checkIfInBounds", () => {
       if(this.getGlobalX() > Utility.scaleX(1) || this.getGlobalY() > Utility.scaleY(1) || this.getGlobalX() < 0 || this.getGlobalY() < 0){
         this.destroy();
       }
-    })
+    });
     this.addUpdateCallback("updateTarget", () => {
       if(this.target != this.findTarget()){
         this.target = this.findTarget();
       }
-    })
+    });
     this.addUpdateCallback("updateVelocity", () => {
       if(this.target != null){
         let delta_x = this.target.x - this.getGlobalX();
         let delta_y = this.target.y - this.getGlobalY();
-        this.x_velocity = this.speed * delta_x / Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
-        this.y_velocity = this.speed * delta_y / Math.sqrt(Math.pow(delta_x, 2) + Math.pow(delta_y, 2));
+        this.x_velocity = this.attack_info.speed * delta_x / Math.sqrt(delta_x ** 2 + delta_y ** 2);
+        this.y_velocity = this.attack_info.speed * delta_y / Math.sqrt(delta_x ** 2 + delta_y ** 2);
         //scuffed but will work for now
+      }
+    });
+    this.addUpdateCallback("checkIfHitTarget", () => {
+      if(this.target != null){
+        if(Utility.distance(this.getGlobalX(), this.getGlobalY(), this.target.x, this.target.y) < 5){
+          if(this.attack_info.type == "Precision"){
+            this.target.health -= this.parent.attack_info.damage;
+            this.destroy();
+            if(this.target.health <= 0) this.target.destroy();
+          }else if(this.attack_info.type == "Splash"){
+            //play splash animation
+            this.x_velocity = 0;
+            this.y_velocity = 0;
+            this.removeUpdateCallback("updateVelocity");
+            this.removeUpdateCallback("checkIfInBounds");
+            this.removeUpdateCallback("updateTarget");
+            this.index = ACTIVE_SPLASH_PROJECTILES_LIST.length;
+            ACTIVE_SPLASH_PROJECTILES_LIST.push(this);
+            this.time_activated = Date.now();
+            this.addUpdateCallback("checkIfTimeToDestroy", () => {
+              if(Date.now() - this.attack_info.duration > this.time_activated){
+                ACTIVE_SPLASH_PROJECTILES_LIST.forEach((i, idx) => {
+                  if(idx > this.index){
+                    i.index++;
+                  }
+                })
+                ACTIVE_SPLASH_PROJECTILES_LIST.splice(this.index, 1);
+                this.destroy();
+              }
+              
+            })
+            this.removeUpdateCallback("checkIfHitTarget");
+          }
+        }
       }
     })
   }
@@ -392,23 +435,67 @@ class DefenderInfo {
     this.animations = animations;
   }
 }
-class MobileDefender extends MobileEntity {
-  constructor(name, parent, x, y, animations, x_velocity, y_velocity, description, price, ability) {
-    super(name, parent, x, y, animations, x_velocity, y_velocity);
-    this.description = description;
-    this.price = price;
-    this.ability = ability;
-    this.owned = false;
-  }
-}
 class Enemy extends MobileEntity {
-  constructor(name, parent, x, y, animations, x_velocity, y_velocity, health, ability, spawn_point) {
-    super(name, parent, x, y, animations, x_velocity, y_velocity);
+  constructor(name, parent, animations, health, on_death, spawn_point, parent_x=-1, parent_y=-1, parent_x_velocity=-1, parent_y_velocity=-1) {
+    super(name, parent, 0, 0, animations, 0, 0);
     this.index = ACTIVE_ENEMIES_LIST.length;
+    this.on_death = on_death ?? (() => {});
+    this.when_to_spawn = -1;
     ACTIVE_ENEMIES_LIST.push(this);
     this.health = health;
-    this.ability = ability;
     this.spawn_point = spawn_point;
+    switch(this.spawn_point){
+      case "south_side_stairs": 
+        this.x = Utility.scaleX(0.1);
+        this.y = Utility.scaleY(0.2);
+        this.x_velocity = 1;
+        this.y_velocity = 0;
+      break;
+      case "elevators":
+        this.x = Utility.scaleX(0.1);
+        this.y = Utility.scaleY(0.2);
+        this.x_velocity = 1;
+        this.y_velocity = 0;
+      break;
+      case "north_side_stairs":
+        this.x = Utility.scaleX(0.1);
+        this.y = Utility.scaleY(0.2);
+        this.x_velocity = 1;
+        this.y_velocity = 0;
+      break;
+      case "l_well":
+        this.x = Utility.scaleX(0.9);
+        this.y = Utility.scaleY(0.9);
+        this.x_velocity = 0;
+        this.y_velocity = -1;
+      break;
+      case "parent":
+        this.x = parent_x;
+        this.y = parent_y;
+        this.x_velocity = parent_x_velocity;
+        this.y_velocity = parent_y_velocity;
+      break;
+    }
+    const SERVER_ROOM = {x: Utility.scaleX(0.9), y: Utility.scaleY(0.2)};
+    this.addUpdateCallback("checkIfReachedServerRoom", () => {
+      if(Utility.distance(this.x, this.y, SERVER_ROOM.x, SERVER_ROOM.y) < 5){
+        LIVES.lives--;
+        this.destroy();
+      }
+    })
+    this.addUpdateCallback("checkIfBeingSplashDamaged", () => {
+      ACTIVE_SPLASH_PROJECTILES_LIST.forEach(i => {
+        if(Utility.distance(i.getGlobalX(), i.getGlobalY(), this.x, this.y) < i.attack_info.radius){
+          this.health -= i.attack_info.damage;
+          if(this.health <= 0){
+            this.destroy();
+          }
+        }
+      })
+    })
+    this.addUpdateCallback("onDeath", () => {
+      this.on_death();
+    })
   }
   destroy(){
     super.destroy();
@@ -418,13 +505,13 @@ class Enemy extends MobileEntity {
     ACTIVE_ENEMIES_LIST.splice(this.index, 1);
   }
 }
+
 export {
   Entity,
   MobileEntity,
   ClickableEntity,
   MobileClickableEntity,
   Button,
-  MobileDefender,
   DefenderInfo,
   Enemy,
   Defender,

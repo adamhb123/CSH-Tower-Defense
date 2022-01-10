@@ -43,13 +43,13 @@ function menu(stage){
 function buy_menu(stage){
   let current_page = 0;
   const DEFENDERS = [
-    new Entities.DefenderInfo("a", {best_target: "a", attack: "a", blob: "a", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("b", {best_target: "b", attack: "b", blob: "b", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("c", {best_target: "c", attack: "c", blob: "c", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("d", {best_target: "d", attack: "d", blob: "d", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("d", {best_target: "t", attack: "d", blob: "t", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("d", {best_target: "v", attack: "d", blob: "v", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
-    new Entities.DefenderInfo("d", {best_target: "b", attack: "d", blob: "b", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("a", {best_target: "a",attack_info: {type: "Precision", frequency: 2000, damage: 10}, attack: "Precision", blob: "a", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("b", {best_target: "b", attack_info: {type: "Precision", frequency: 2000, damage: 10},attack: "Precision", blob: "b", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("c", {best_target: "c", attack_info: {type: "Precision", frequency: 2000, damage: 10},attack: "Precision", blob: "c", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("d", {best_target: "d", attack_info: {type: "Precision", frequency: 2000, damage: 10},attack: "Precision", blob: "d", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("d", {best_target: "t", attack_info: {type: "Precision", frequency: 2000, damage: 10},attack: "Precision", blob: "t", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("d", {best_target: "v", attack_info: {type: "Precision", frequency: 2000, damage: 10},attack: "Precision", blob: "v", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
+    new Entities.DefenderInfo("d", {best_target: "b", attack_info: {type: "Precision", frequency: 2000, damage: 10}, attack: "Precision", blob: "b", price: 10}, Resources.getSpriteAnimations("GenericEnemy01")),
   ];
   let show_money = new Entities.Entity("show_money", stage, Utility.scaleX(0.9), Utility.scaleY(0),  Resources.getSpriteAnimations("ColorBackground"));
   show_money.setScale(Utility.scaleX(0.1), Utility.scaleY(0.1));
@@ -117,7 +117,7 @@ function buy_menu(stage){
     buy_card.setReleaseFunction(() => {
       let valid_drop = checkIfValidPlacement(buy_card.getGlobalX(), buy_card.getGlobalY());
       if(valid_drop){
-        let defender_entity = new Entities.ClickableEntity(defender.name, stage, buy_card.getGlobalX(), buy_card.getGlobalY(), defender.animations, buy_card.on_click);
+        let defender_entity = new Entities.Defender(defender.name, stage, buy_card.getGlobalX(),buy_card.getGlobalY(), Resources.getSpriteAnimations("GenericEnemy01"), defender.description.attack_info, null);
         defender_entity.setAnchor(0.5, 0.5);
         ACTIVE_DEFENDERS.push(defender_entity);
         buy_card.draggable = false;
@@ -203,6 +203,7 @@ function buy_menu(stage){
         element.getChildNamedSpriteAnimation("Default").visible = false;
     });
     current_page += (forward ? 1 : -1);
+    current_page = Math.max(0, Math.min(Math.floor(DEFENDERS.length / 6), current_page));
     //sets desired to be visible
     defender_buy_cards.forEach((element, index) => {
         element.getChildNamedSpriteAnimation("Default").visible = Math.floor(index / 6) == current_page;
